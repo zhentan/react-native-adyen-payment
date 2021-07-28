@@ -9,7 +9,7 @@ import Foundation
 import PassKit
 
 internal struct PaymentsData {
-    static var amount : Payment.Amount = Payment.Amount(value: 0, currencyCode: "EUR")
+    static var amount = Amount(value: 0, currencyCode: "EUR")
     static var reference  : String = "Test Order Reference - iOS UIHost"
     static var countryCode : String = "FR"
     static var shopperLocale : String = "fr_FR"
