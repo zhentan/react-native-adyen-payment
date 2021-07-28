@@ -7,6 +7,23 @@ internal struct AppServiceConfigData {
     static var card_public_key : String = ""
     static var applePayMerchantIdentifier : String = ""
     static var environment : String = "test"
+	
+	static var environmentObject: Environment {
+		switch environment {
+			case "test":
+				return Environment.test
+			case "live":
+				return Environment.live
+			case "eu":
+				return Environment.liveEurope
+			case "au":
+				return Environment.liveAustralia
+			case "us":
+				return Environment.liveUnitedStates
+			default:
+				return Environment.test
+		}
+	}
 }
 
 internal final class APIClient {

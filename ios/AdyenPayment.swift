@@ -47,7 +47,7 @@ class AdyenPayment: RCTEventEmitter {
     func setPaymentDetails(_ paymentDetails : NSDictionary){
         let amount = paymentDetails["amount"] as! [String : Any]
 //        let additionalData = paymentDetails["additionalData"] as? [String : Any]
-        PaymentsData.amount = Payment.Amount(value: amount["value"] as! Int, currencyCode: amount["currency"] as! String)
+        PaymentsData.amount = Amount(value: amount["value"] as! Int, currencyCode: amount["currency"] as! String)
         PaymentsData.reference = paymentDetails["reference"] as! String
         PaymentsData.countryCode = paymentDetails["countryCode"] as! String
         PaymentsData.returnUrl = paymentDetails["returnUrl"] as! String
@@ -96,17 +96,17 @@ class AdyenPayment: RCTEventEmitter {
     func showCardComponent(_ componentData : NSDictionary) throws {
         guard let paymentMethod = self.paymentMethods?.paymentMethod(ofType: CardPaymentMethod.self) else { return}
         let cardComponent : [String:Any] = componentData["scheme"] as? [String:Any] ?? [:]
-        guard cardComponent["card_public_key"] != nil else {return}
-        guard let shouldShowSCAToggle = cardComponent["shouldShowSCAToggle"] else {return}
+        guard let shouldShowSCAToggle = cardComponent["shouldShowSCAToggle"] as? Bool else { return }
+		guard let clientKey = cardComponent["card_public_key"] as? String else { return }
+		
         DispatchQueue.main.async {
 //            if(self.storedPaymentMethod(ofType: StoredCardPaymentMethod.self) != nil){
 //                let configuration = DropInComponent.PaymentMethodsConfiguration()
 //                configuration.card.publicKey = cardComponent["card_public_key"] as? String
 //                self.showDropInComponent(configuration: configuration)
 //            }else{
-            let style = FormComponentStyle(tintColor: UIColor.init(hex: 0xFF5436))
-            let component = CardComponent(paymentMethod: paymentMethod, publicKey:(cardComponent["card_public_key"] as! String), style: style)
-            component.showsStorePaymentMethodField = shouldShowSCAToggle as! Bool
+			let style = FormComponentStyle(tintColor: UIColor(red: 1.0, green: 84.0 / 255.0, blue: 54.0 / 255.0, alpha: 1.0))
+			let component = CardComponent(paymentMethod: paymentMethod, apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: clientKey), configuration: CardComponent.Configuration(showsStorePaymentMethodField: shouldShowSCAToggle), style: style)
             self.present(component)
 //            }
         }
@@ -117,7 +117,11 @@ class AdyenPayment: RCTEventEmitter {
     func showIssuerComponent(_ component : String, componentData : NSDictionary) throws{
         DispatchQueue.main.async {
             guard let paymentMethod = self.paymentMethods?.paymentMethod(ofType: IssuerListPaymentMethod.self) else { return }
-            let component = IssuerListComponent(paymentMethod: paymentMethod)
+			// TODO: test if this is correct. It appears that updates to Adyen in 4.0.0 require an `APIContext` which requires a client key.
+			let clientKey = AppServiceConfigData.card_public_key
+			guard !clientKey.isEmpty else { return }
+			let component = IssuerListComponent(paymentMethod: paymentMethod, apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: clientKey))
+			
             self.present(component)
         }
     }
@@ -125,20 +129,25 @@ class AdyenPayment: RCTEventEmitter {
     func showBCMCComponent(_ componentData : NSDictionary)throws {
            DispatchQueue.main.async {
                guard let paymentMethod = self.paymentMethods?.paymentMethod(ofType: BCMCPaymentMethod.self) else { return }
-            let bcmcComponent : [String:Any] = componentData["bcmc"] as? [String:Any] ?? [:]
-            if(!bcmcComponent.isEmpty){
-                let component = BCMCComponent(paymentMethod: paymentMethod, publicKey: bcmcComponent["card_public_key"] as! String)
-                    component.delegate = self
-                    self.present(component)
-                }
-            }
+				let bcmcComponent : [String:Any] = componentData["bcmc"] as? [String:Any] ?? [:]
+            
+				if !bcmcComponent.isEmpty {
+					let component = BCMCComponent(paymentMethod: paymentMethod, apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: bcmcComponent["card_public_key"] as! String))
+					component.delegate = self
+					self.present(component)
+				}
+			}
        }
 
     
-    func showSEPADirectDebitComponent(_ componentData : NSDictionary)throws {
+    func showSEPADirectDebitComponent(_ componentData : NSDictionary) throws {
         DispatchQueue.main.async {
             guard let paymentMethod = self.paymentMethods?.paymentMethod(ofType: SEPADirectDebitPaymentMethod.self) else { return }
-            let component = SEPADirectDebitComponent(paymentMethod: paymentMethod)
+			// TODO: test if this is correct. It appears that updates to Adyen in 4.0.0 require an `APIContext` which requires a client key.
+			let clientKey = AppServiceConfigData.card_public_key
+			guard !clientKey.isEmpty else { return }
+			let component = SEPADirectDebitComponent(paymentMethod: paymentMethod, apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: clientKey))
+			
             component.delegate = self
             self.present(component)
         }
@@ -147,12 +156,15 @@ class AdyenPayment: RCTEventEmitter {
     func showApplePayComponent(_ componentData : NSDictionary) throws {
         DispatchQueue.main.async {
             guard let paymentMethod = self.paymentMethods?.paymentMethod(ofType: ApplePayPaymentMethod.self) else { return }
+			// TODO: test if this is correct. It appears that updates to Adyen in 4.0.0 require an `APIContext` which requires a client key.
+			let clientKey = AppServiceConfigData.card_public_key
+			guard !clientKey.isEmpty else { return }
             let appleComponent : [String:Any] = componentData["applepay"] as? [String:Any] ?? [:]
             guard appleComponent["apple_pay_merchant_id"] != nil else {return}
             do{
                 let amt = NSDecimalNumber(string: String(format: "%.2f", Float(PaymentsData.amount.value) / 100))
                 let applePaySummaryItems = [PKPaymentSummaryItem(label: "Total", amount: amt, type: .final)]
-                let component = try ApplePayComponent(paymentMethod: paymentMethod,payment:Payment(amount: PaymentsData.amount, countryCode: PaymentsData.countryCode),merchantIdentifier: appleComponent["apple_pay_merchant_id"] as! String,summaryItems: applePaySummaryItems)
+				let component = try ApplePayComponent(paymentMethod: paymentMethod, apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: clientKey), payment: Payment(amount: PaymentsData.amount, countryCode: PaymentsData.countryCode), configuration: .init(summaryItems: applePaySummaryItems, merchantIdentifier: appleComponent["apple_pay_merchant_id"] as! String))
                 component.delegate = self
                 self.present(component)
             }catch let appleError as ApplePayComponent.Error{
@@ -163,7 +175,7 @@ class AdyenPayment: RCTEventEmitter {
       }
     }
     
-    func showDropInComponent(configuration : DropInComponent.PaymentMethodsConfiguration) {
+    func showDropInComponent(configuration : DropInComponent.Configuration) {
         DispatchQueue.main.async {
             var regularPaymentMethods : [PaymentMethod] = [PaymentMethod]()
             var storedPaymentMethods : [StoredPaymentMethod] = [StoredPaymentMethod]()
@@ -180,7 +192,7 @@ class AdyenPayment: RCTEventEmitter {
                     break
                 }
             }
-            let dropInComponent = DropInComponent(paymentMethods: PaymentMethods(regular:regularPaymentMethods, stored:storedPaymentMethods),paymentMethodsConfiguration: configuration)
+            let dropInComponent = DropInComponent(paymentMethods: PaymentMethods(regular:regularPaymentMethods, stored:storedPaymentMethods), configuration: configuration)
             dropInComponent.delegate = self
             self.present(dropInComponent)
         }
@@ -266,28 +278,36 @@ class AdyenPayment: RCTEventEmitter {
         }
     }
     
-    func showDropInComponent(_ componentData : NSDictionary) throws{
-        let configuration = DropInComponent.PaymentMethodsConfiguration()
-        let appleComponent : [String:Any] = componentData["applepay"] as? [String:Any] ?? [:]
-        let cardComponent : [String:Any] = componentData["scheme"] as? [String:Any] ?? [:]
-        if(!cardComponent.isEmpty){
-            configuration.card.publicKey = cardComponent["card_public_key"] as? String
+    func showDropInComponent(_ componentData: NSDictionary) throws {
+		let appleComponent: [String: Any] = componentData["applepay"] as? [String:Any] ?? [:]
+		let cardComponent: [String: Any] = componentData["scheme"] as? [String:Any] ?? [:]
+		let bcmcComponent: [String: Any] = componentData["bcmc"] as? [String: Any] ?? [:]
+		let clientKey: String = {
+			if let clientKey = cardComponent["card_public_key"] as? String {
+				return clientKey
+			} else if let clientKey = bcmcComponent["card_public_key"] as? String {
+				return clientKey
+			} else {
+				return AppServiceConfigData.card_public_key
+			}
+		}()
+		
+		let configuration = DropInComponent.Configuration(apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: clientKey))
+        
+        if !cardComponent.isEmpty {
             configuration.card.showsHolderNameField = cardComponent["showsHolderNameField"] as? Bool ?? false
             configuration.card.showsStorePaymentMethodField = cardComponent["showsStorePaymentMethodField"] as? Bool ?? false
         }
-        let bcmcComponent : [String:Any] = componentData["bcmc"] as? [String:Any] ?? [:]
-        if(!bcmcComponent.isEmpty){
-            configuration.card.publicKey = bcmcComponent["card_public_key"] as? String
+		
+        if !appleComponent.isEmpty {
+			let amt = NSDecimalNumber(string: String(format: "%.2f", Float(PaymentsData.amount.value) / 100))
+			let applePaySummaryItems = [PKPaymentSummaryItem(label: "Total", amount: amt, type: .final)]
+			
+			configuration.applePay = .init(summaryItems: applePaySummaryItems, merchantIdentifier: appleComponent["apple_pay_merchant_id"] as! String)
         }
-        if(!appleComponent.isEmpty){
-            configuration.applePay.merchantIdentifier = appleComponent["apple_pay_merchant_id"] as? String
-            // let amt = NSDecimalNumber(string: String(format: "%.2f", Float((PaymentsData.amount.value) / 100)))
-            let amt = NSDecimalNumber(string: String(format: "%.2f", Float(PaymentsData.amount.value) / 100))
-            let applePaySummaryItems = [PKPaymentSummaryItem(label: "Total", amount: amt, type: .final)]
-            configuration.applePay.summaryItems = applePaySummaryItems
-        }
+		
         DispatchQueue.main.async {
-            let dropInComponent = DropInComponent(paymentMethods: self.paymentMethods!,paymentMethodsConfiguration: configuration)
+            let dropInComponent = DropInComponent(paymentMethods: self.paymentMethods!, configuration: configuration)
             dropInComponent.delegate = self
             self.present(dropInComponent)
         }
@@ -314,31 +334,15 @@ class AdyenPayment: RCTEventEmitter {
  */
     
     func present(_ component: PresentableComponent) {
-        switch(AppServiceConfigData.environment){
-            case "test":
-                component.environment = Environment.test
-            case "live":
-                component.environment = Environment.live
-            case "eu":
-                component.environment = Environment.liveEurope
-            case "au":
-                component.environment = Environment.liveAustralia
-            case "us":
-                component.environment = Environment.liveUnitedStates
-            default:
-                component.environment = Environment.test
-        }
-        let amount = PaymentsData.amount as Payment.Amount
-        component.payment = Payment(amount: amount)
-        component.payment?.countryCode = PaymentsData.countryCode
-        
         if let paymentComponent = component as? PaymentComponent {
+			paymentComponent.payment = Payment(amount: PaymentsData.amount, countryCode: PaymentsData.countryCode)
             paymentComponent.delegate = self
         }
         
         if let actionComponent = component as? ActionComponent {
             actionComponent.delegate = self
         }
+		
         (UIApplication.shared.delegate?.window??.rootViewController)!.present(component.viewController, animated: true)
         self.currentComponent = component
     }
@@ -349,7 +353,7 @@ class AdyenPayment: RCTEventEmitter {
     }
     
     func performPaymentDetails(with data: ActionComponentData) {
-        let request = PaymentDetailsRequest(details: data.details, paymentData: data.paymentData)
+		let request = PaymentDetailsRequest(details: data.details, paymentData: data.paymentData ?? "")
         apiClient.perform(request, completionHandler: paymentResponseHandler)
     }
     
@@ -362,25 +366,33 @@ class AdyenPayment: RCTEventEmitter {
                 if(response.resultCode != nil){
                     finish(with: response)
                 }else if(response.validationError != nil){
-                    currentComponent?.stopLoading(withSuccess: false) { [weak self] in
-                        let validationError = response.validationError!
-                        if(validationError.type=="validation"){
-                            self?.presentAlert(withTitle:"Error",message:validationError.errorMessage)
-                        }else{
-                            let errMsg = (validationError.errorCode ?? "") + " : " + (validationError.errorMessage ?? "")
-                                self?.sendFailure(code : "ERROR_PAYMENT_DETAILS",message: errMsg)
-                            (UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true) {}
-                        }   
-                    }
-                }else if(response.spinError != nil){
-                    self.sendFailure(code : "ERROR_SPIN",message: response.spinError!)
-                    (UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true) {}
+					guard let currentComponent = currentComponent else {
+						return
+					}
+					
+					currentComponent.finalizeIfNeeded(with: false)
+					
+					let validationError = response.validationError!
+				
+					if validationError.type == "validation" {
+						presentAlert(withTitle: "Error", message: validationError.errorMessage)
+					} else {
+						let errMsg = (validationError.errorCode ?? "") + " : " + (validationError.errorMessage ?? "")
+							sendFailure(code: "ERROR_PAYMENT_DETAILS", message: errMsg)
+						(UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true)
+					}
+                } else if response.spinError != nil {
+                    sendFailure(code: "ERROR_SPIN", message: response.spinError!)
+                    (UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true)
                 }
             }
         case let .failure(error):
-            currentComponent?.stopLoading(withSuccess: false) { [weak self] in
-                self?.presentAlert(with: error)
-            }
+			guard let currentComponent = currentComponent else {
+				return
+			}
+			
+			currentComponent.finalizeIfNeeded(with: false)
+			presentAlert(with: error)
         }
     }
     
@@ -402,14 +414,14 @@ class AdyenPayment: RCTEventEmitter {
     }
     
     func redirect(with action: RedirectAction) {
-        let redirectComponent = RedirectComponent()
+		let redirectComponent = RedirectComponent(apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: AppServiceConfigData.card_public_key))
         redirectComponent.delegate = self
         self.redirectComponent = redirectComponent
         redirectComponent.handle(action)
     }
     
     func performThreeDS2Fingerprint(with action: ThreeDS2FingerprintAction) {
-        let threeDS2Component = ThreeDS2Component()
+		let threeDS2Component = ThreeDS2Component(apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: AppServiceConfigData.card_public_key))
         threeDS2Component.delegate = self
         self.threeDS2Component = threeDS2Component
         threeDS2Component.handle(action)
@@ -430,8 +442,8 @@ class AdyenPayment: RCTEventEmitter {
                 (card : [String : Any]) -> NSDictionary in
                 return NSMutableDictionary(dictionary: card)
             })
-            let msg:Dictionary? = ["resultCode" : resultCode.rawValue,"merchantReference":response.merchantReference,"pspReference" : response.pspReference,"additionalData" : additionalData, "creditCards": creditCards]
-            self.sendSuccess(message:msg)
+			let msg: [String: Any] = ["resultCode": resultCode.rawValue, "merchantReference": response.merchantReference as Any, "pspReference": response.pspReference as Any, "additionalData": additionalData, "creditCards": creditCards]
+            self.sendSuccess(message: msg)
         }else if(resultCode == .refused || resultCode == .error){
             self.sendFailure(code : response.error_code ?? "",message: response.refusalReason ?? "")
         }else if (resultCode == .cancelled){
@@ -439,9 +451,12 @@ class AdyenPayment: RCTEventEmitter {
         }else{
             self.sendFailure(code : "ERROR_UNKNOWN",message: "Unknown Error")
         }
-        currentComponent?.stopLoading(withSuccess: true) { [] in
-            (UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true) {}
-        }
+		
+		if let currentComponent = currentComponent {
+			currentComponent.finalizeIfNeeded(with: true)
+			(UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true)
+		}
+
         redirectComponent = nil
         threeDS2Component = nil
         
@@ -480,10 +495,15 @@ class AdyenPayment: RCTEventEmitter {
 }
 
 extension AdyenPayment: DropInComponentDelegate {
-    
-    internal func didSubmit(_ data: PaymentComponentData, from component: DropInComponent) {
-        performPayment(with: data)
-    }
+	func didSubmit(_ data: PaymentComponentData, for paymentMethod: PaymentMethod, from component: DropInComponent) {
+		performPayment(with: data)
+	}
+	
+	func didComplete(from component: DropInComponent) {
+		redirectComponent = nil
+		threeDS2Component = nil
+		(UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true)
+	}
     
     internal func didProvide(_ data: ActionComponentData, from component: DropInComponent) {
         performPaymentDetails(with: data)
@@ -508,7 +528,12 @@ extension AdyenPayment: PaymentComponentDelegate {
 }
 
 extension AdyenPayment: ActionComponentDelegate {
-    
+	func didComplete(from component: ActionComponent) {
+		redirectComponent = nil
+		threeDS2Component = nil
+		(UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true)
+	}
+	
     internal func didFail(with error: Error, from component: ActionComponent) {
         finish(with: error)
     }
