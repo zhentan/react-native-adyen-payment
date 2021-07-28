@@ -4,7 +4,7 @@ require_relative '../node_modules/@react-native-community/cli-platform-ios/nativ
 source 'git@github.com:spin-org/spin-podspecs.git'
 source 'https://cdn.cocoapods.org/'
 
-platform :ios, '10.0'
+platform :ios, '11.0'
 
 target 'example' do
   config = use_native_modules!
