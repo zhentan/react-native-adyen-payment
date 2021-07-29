@@ -66,6 +66,9 @@ class AdyenPayment: RCTEventEmitter {
 
     func setAppServiceConfigDetails(_ appServiceConfigData : NSDictionary){
         AppServiceConfigData.base_url = appServiceConfigData["base_url"] as! String
+        if(appServiceConfigData["client_key"] != nil){
+           AppServiceConfigData.clientKey = appServiceConfigData["client_key"] as! String
+        }
         if(appServiceConfigData["additional_http_headers"] != nil){
            AppServiceConfigData.app_url_headers = appServiceConfigData["additional_http_headers"] as! [String:String]
         }
@@ -97,8 +100,10 @@ class AdyenPayment: RCTEventEmitter {
         guard let paymentMethod = self.paymentMethods?.paymentMethod(ofType: CardPaymentMethod.self) else { return}
         let cardComponent : [String:Any] = componentData["scheme"] as? [String:Any] ?? [:]
         guard let shouldShowSCAToggle = cardComponent["shouldShowSCAToggle"] as? Bool else { return }
-		guard let clientKey = cardComponent["card_public_key"] as? String else { return }
-		
+        guard let shouldShowPostalCode = cardComponent["shouldShowPostalCode"] as? Bool else { return }
+        let clientKey = AppServiceConfigData.clientKey
+        guard !clientKey.isEmpty else { return }
+        
         DispatchQueue.main.async {
 //            if(self.storedPaymentMethod(ofType: StoredCardPaymentMethod.self) != nil){
 //                let configuration = DropInComponent.PaymentMethodsConfiguration()
@@ -106,7 +111,7 @@ class AdyenPayment: RCTEventEmitter {
 //                self.showDropInComponent(configuration: configuration)
 //            }else{
 			let style = FormComponentStyle(tintColor: UIColor(red: 1.0, green: 84.0 / 255.0, blue: 54.0 / 255.0, alpha: 1.0))
-			let component = CardComponent(paymentMethod: paymentMethod, apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: clientKey), configuration: CardComponent.Configuration(showsStorePaymentMethodField: shouldShowSCAToggle), style: style)
+            let component = CardComponent(paymentMethod: paymentMethod, apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: clientKey), configuration: CardComponent.Configuration(showsStorePaymentMethodField: shouldShowSCAToggle, billingAddressMode: shouldShowPostalCode ? .postalCode : .none), style: style)
             self.present(component)
 //            }
         }
@@ -118,7 +123,7 @@ class AdyenPayment: RCTEventEmitter {
         DispatchQueue.main.async {
             guard let paymentMethod = self.paymentMethods?.paymentMethod(ofType: IssuerListPaymentMethod.self) else { return }
 			// TODO: test if this is correct. It appears that updates to Adyen in 4.0.0 require an `APIContext` which requires a client key.
-			let clientKey = AppServiceConfigData.card_public_key
+			let clientKey = AppServiceConfigData.clientKey
 			guard !clientKey.isEmpty else { return }
 			let component = IssuerListComponent(paymentMethod: paymentMethod, apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: clientKey))
 			
@@ -144,7 +149,7 @@ class AdyenPayment: RCTEventEmitter {
         DispatchQueue.main.async {
             guard let paymentMethod = self.paymentMethods?.paymentMethod(ofType: SEPADirectDebitPaymentMethod.self) else { return }
 			// TODO: test if this is correct. It appears that updates to Adyen in 4.0.0 require an `APIContext` which requires a client key.
-			let clientKey = AppServiceConfigData.card_public_key
+			let clientKey = AppServiceConfigData.clientKey
 			guard !clientKey.isEmpty else { return }
 			let component = SEPADirectDebitComponent(paymentMethod: paymentMethod, apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: clientKey))
 			
@@ -157,7 +162,7 @@ class AdyenPayment: RCTEventEmitter {
         DispatchQueue.main.async {
             guard let paymentMethod = self.paymentMethods?.paymentMethod(ofType: ApplePayPaymentMethod.self) else { return }
 			// TODO: test if this is correct. It appears that updates to Adyen in 4.0.0 require an `APIContext` which requires a client key.
-			let clientKey = AppServiceConfigData.card_public_key
+			let clientKey = AppServiceConfigData.clientKey
 			guard !clientKey.isEmpty else { return }
             let appleComponent : [String:Any] = componentData["applepay"] as? [String:Any] ?? [:]
             guard appleComponent["apple_pay_merchant_id"] != nil else {return}
@@ -288,7 +293,7 @@ class AdyenPayment: RCTEventEmitter {
 			} else if let clientKey = bcmcComponent["card_public_key"] as? String {
 				return clientKey
 			} else {
-				return AppServiceConfigData.card_public_key
+				return AppServiceConfigData.clientKey
 			}
 		}()
 		
@@ -414,14 +419,14 @@ class AdyenPayment: RCTEventEmitter {
     }
     
     func redirect(with action: RedirectAction) {
-		let redirectComponent = RedirectComponent(apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: AppServiceConfigData.card_public_key))
+		let redirectComponent = RedirectComponent(apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: AppServiceConfigData.clientKey))
         redirectComponent.delegate = self
         self.redirectComponent = redirectComponent
         redirectComponent.handle(action)
     }
     
     func performThreeDS2Fingerprint(with action: ThreeDS2FingerprintAction) {
-		let threeDS2Component = ThreeDS2Component(apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: AppServiceConfigData.card_public_key))
+		let threeDS2Component = ThreeDS2Component(apiContext: APIContext(environment: AppServiceConfigData.environmentObject, clientKey: AppServiceConfigData.clientKey))
         threeDS2Component.delegate = self
         self.threeDS2Component = threeDS2Component
         threeDS2Component.handle(action)

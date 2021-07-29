@@ -3,7 +3,8 @@ import {Platform, View, Button, Text} from 'react-native';
 import AdyenPayment from 'react-native-adyen-payment';
 import {
   ADYEN_MERCHANT_ACCOUNT,
-  ADYEN_PUBLIC_KEY,
+  SPIN_BEARER_TOKEN,
+  ADYEN_CLIENT_KEY,
   ADYEN_BASE_URL,
   ADYEN_ENVIRONMENT,
 } from '@env';
@@ -31,7 +32,8 @@ const MOCK_PAYMENT_DETAILS = {
 
 const MOCK_COMPONENT_DATA = {
   scheme: {
-    card_public_key: ADYEN_PUBLIC_KEY,
+    shouldShowPostalCode: true,
+    shouldShowSCAToggle: true,
   },
   // Uncomment to add Apple Pay (replace apple_pay_merchant_id):
   // applepay: {
@@ -44,9 +46,11 @@ const MOCK_COMPONENT_DATA = {
 const APP_SERVICE_CONFIG_DATA = {
   environment: ADYEN_ENVIRONMENT,
   base_url: ADYEN_BASE_URL,
+  client_key: ADYEN_CLIENT_KEY,
   // Add any additional headers to pass to your backend
   additional_http_headers: {
     'x-channel': Platform.OS, // Example
+    Authorization: `Bearer ${SPIN_BEARER_TOKEN}`,
   },
 };
 
@@ -73,12 +77,12 @@ function AdyenExample() {
     });
   }, []);
 
-  function handleDropInButtonPress() {
+  function handleButtonPress(type) {
     setStatus(STATUS.initiated);
 
     try {
       AdyenPayment.startPayment(
-        AdyenPayment.DROPIN,
+        type,
         MOCK_COMPONENT_DATA,
         MOCK_PAYMENT_DETAILS,
       );
@@ -87,10 +91,19 @@ function AdyenExample() {
     }
   }
 
+  function handleCardButtonPress() {
+    handleButtonPress(AdyenPayment.SCHEME);
+  }
+
+  function handleDropinButtonPress() {
+    handleButtonPress(AdyenPayment.DROPIN);
+  }
+
   return (
     <View>
       <Text>Status: {status}</Text>
-      <Button title="Drop-in" onPress={handleDropInButtonPress} />
+      <Button title="Drop-in" onPress={handleDropinButtonPress} />
+      <Button title="Card Component" onPress={handleCardButtonPress} />
     </View>
   );
 }
