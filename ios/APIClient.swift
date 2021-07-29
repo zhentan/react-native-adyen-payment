@@ -4,10 +4,9 @@ import Foundation
 internal struct AppServiceConfigData {
     static var base_url : String = ""
     static var app_url_headers : [String:String] = [:]
-    static var card_public_key : String = ""
+    static var clientKey : String = ""
     static var applePayMerchantIdentifier : String = ""
     static var environment : String = "test"
-	
 	static var environmentObject: Environment {
 		switch environment {
 			case "test":
