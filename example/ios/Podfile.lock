@@ -1,27 +1,27 @@
 PODS:
-  - Adyen (4.0.0-spin):
-    - Adyen/Actions (= 4.0.0-spin)
-    - Adyen/Card (= 4.0.0-spin)
-    - Adyen/Components (= 4.0.0-spin)
-    - Adyen/Core (= 4.0.0-spin)
-    - Adyen/DropIn (= 4.0.0-spin)
-    - Adyen/Encryption (= 4.0.0-spin)
-  - Adyen/Actions (4.0.0-spin):
+  - Adyen (4.0.0-spin.1):
+    - Adyen/Actions (= 4.0.0-spin.1)
+    - Adyen/Card (= 4.0.0-spin.1)
+    - Adyen/Components (= 4.0.0-spin.1)
+    - Adyen/Core (= 4.0.0-spin.1)
+    - Adyen/DropIn (= 4.0.0-spin.1)
+    - Adyen/Encryption (= 4.0.0-spin.1)
+  - Adyen/Actions (4.0.0-spin.1):
     - Adyen/Core
     - Adyen3DS2 (= 2.2.2)
-  - Adyen/Card (4.0.0-spin):
+  - Adyen/Card (4.0.0-spin.1):
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Components (4.0.0-spin):
+  - Adyen/Components (4.0.0-spin.1):
     - Adyen/Core
-  - Adyen/Core (4.0.0-spin)
-  - Adyen/DropIn (4.0.0-spin):
+  - Adyen/Core (4.0.0-spin.1)
+  - Adyen/DropIn (4.0.0-spin.1):
     - Adyen/Actions
     - Adyen/Card
     - Adyen/Components
     - Adyen/Core
     - Adyen/Encryption
-  - Adyen/Encryption (4.0.0-spin)
+  - Adyen/Encryption (4.0.0-spin.1)
   - Adyen3DS2 (2.2.2)
   - boost-for-react-native (1.63.0)
   - DoubleConversion (1.1.6)
@@ -228,7 +228,7 @@ PODS:
     - React-perflogger (= 0.64.2)
   - React-jsinspector (0.64.2)
   - react-native-adyen-payment (1.6.1):
-    - Adyen (= 4.0.0-spin)
+    - Adyen (= 4.0.0-spin.1)
     - React
   - React-perflogger (0.64.2)
   - React-RCTActionSheet (0.64.2):
@@ -397,13 +397,13 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Adyen: 3281d127f15283abbcdee106b9f4a084c179ab3f
+  Adyen: 234db947e7a45fb14d9eecaaa1a350f0a0e11320
   Adyen3DS2: 98e8f8759f1bd16a6f609f21e3eaa9f66f38d1c6
   boost-for-react-native: 39c7adb57c4e60d6c5479dd8623128eb5b3f0f2c
-  DoubleConversion: cde416483dac037923206447da6e1454df403714
+  DoubleConversion: cf9b38bf0b2d048436d9a82ad2abe1404f11e7de
   FBLazyVector: e686045572151edef46010a6f819ade377dfeb4b
   FBReactNativeSpec: f2a08f842fad68d7ed73386c22dd9c048bd45ccf
-  glog: 40a13f7840415b9a77023fbcae0f1e6f43192af3
+  glog: 73c2498ac6884b13ede40eda8228cb1eee9d9d62
   RCT-Folly: ec7a233ccc97cc556cf7237f0db1ff65b986f27c
   RCTRequired: 6d3e854f0e7260a648badd0d44fc364bc9da9728
   RCTTypeSafety: c1f31d19349c6b53085766359caac425926fafaa
@@ -415,7 +415,7 @@ SPEC CHECKSUMS:
   React-jsi: 67747b9722f6dab2ffe15b011bcf6b3f2c3f1427
   React-jsiexecutor: 80c46bd381fd06e418e0d4f53672dc1d1945c4c3
   React-jsinspector: cc614ec18a9ca96fd275100c16d74d62ee11f0ae
-  react-native-adyen-payment: b4c806b613ac11552c276d86dc4ecf985842e646
+  react-native-adyen-payment: 1bf9d66a89bacd952fc49ac0e683dc11419373a6
   React-perflogger: 25373e382fed75ce768a443822f07098a15ab737
   React-RCTActionSheet: af7796ba49ffe4ca92e7277a5d992d37203f7da5
   React-RCTAnimation: 6a2e76ab50c6f25b428d81b76a5a45351c4d77aa
@@ -432,4 +432,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 8e210a61df95bee4fd1e825f98f80d72a398b413
 
-COCOAPODS: 1.10.1
+COCOAPODS: 1.10.2
