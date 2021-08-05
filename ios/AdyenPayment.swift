@@ -100,7 +100,7 @@ class AdyenPayment: RCTEventEmitter {
         guard let paymentMethod = self.paymentMethods?.paymentMethod(ofType: CardPaymentMethod.self) else { return}
         let cardComponent : [String:Any] = componentData["scheme"] as? [String:Any] ?? [:]
         guard let shouldShowSCAToggle = cardComponent["shouldShowSCAToggle"] as? Bool else { return }
-        guard let shouldShowPostalCode = cardComponent["shouldShowPostalCode"] as? Bool else { return }
+        let shouldShowPostalCode = cardComponent["shouldShowPostalCode"] as? Bool ?? true
         let clientKey = AppServiceConfigData.clientKey
         guard !clientKey.isEmpty else { return }
         
