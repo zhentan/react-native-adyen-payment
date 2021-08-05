@@ -32,7 +32,6 @@ const MOCK_PAYMENT_DETAILS = {
 
 const MOCK_COMPONENT_DATA = {
   scheme: {
-    shouldShowPostalCode: true,
     shouldShowSCAToggle: true,
   },
   // Uncomment to add Apple Pay (replace apple_pay_merchant_id):
