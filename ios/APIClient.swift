@@ -114,8 +114,10 @@ internal final class APIClient {
     
     private var requestCounter = 0 {
         didSet {
-            let application = UIApplication.shared
-            application.isNetworkActivityIndicatorVisible = self.requestCounter > 0
+            DispatchQueue.main.async {
+                let application = UIApplication.shared
+                application.isNetworkActivityIndicatorVisible = self.requestCounter > 0
+            }
         }
     }
     
