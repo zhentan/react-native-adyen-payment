@@ -218,10 +218,18 @@ class AdyenPayment: RCTEventEmitter {
         self.showPayment(component,componentData : componentData,paymentDetails : paymentDetails)
     }
     
+    func findTopMostViewController() -> UIViewController {
+        var vc = UIApplication.shared.delegate?.window??.rootViewController
+        while (vc!.presentedViewController != nil) {
+            vc = vc!.presentedViewController!
+        }
+        return vc!
+    }
+    
     func showPayment(_ component: NSString,componentData : NSDictionary,paymentDetails : NSDictionary){
         DispatchQueue.main.async {
-            let rootViewController = UIApplication.shared.delegate?.window??.rootViewController
-            self.showSpinner(onView: rootViewController!.view)
+            let rootViewController = self.findTopMostViewController()
+            self.showSpinner(onView: rootViewController.view)
         }
         self.setPaymentDetails(paymentDetails)
         self.componentData = componentData
@@ -348,7 +356,7 @@ class AdyenPayment: RCTEventEmitter {
             actionComponent.delegate = self
         }
 		
-        (UIApplication.shared.delegate?.window??.rootViewController)!.present(component.viewController, animated: true)
+        findTopMostViewController().present(component.viewController, animated: true)
         self.currentComponent = component
     }
     
@@ -384,11 +392,11 @@ class AdyenPayment: RCTEventEmitter {
 					} else {
 						let errMsg = (validationError.errorCode ?? "") + " : " + (validationError.errorMessage ?? "")
 							sendFailure(code: "ERROR_PAYMENT_DETAILS", message: errMsg)
-						(UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true)
+						findTopMostViewController().dismiss(animated: true)
 					}
                 } else if response.spinError != nil {
                     sendFailure(code: "ERROR_SPIN", message: response.spinError!)
-                    (UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true)
+                    findTopMostViewController().dismiss(animated: true)
                 }
             }
         case let .failure(error):
@@ -459,7 +467,7 @@ class AdyenPayment: RCTEventEmitter {
 		
 		if let currentComponent = currentComponent {
 			currentComponent.finalizeIfNeeded(with: true)
-			(UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true)
+            findTopMostViewController().dismiss(animated: true)
 		}
 
         redirectComponent = nil
@@ -476,19 +484,19 @@ class AdyenPayment: RCTEventEmitter {
         }
         redirectComponent = nil
         threeDS2Component = nil
-        (UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true) {}
+        findTopMostViewController().dismiss(animated: true) {}
     }
     
     private func presentAlert(with error: Error, retryHandler: (() -> Void)? = nil) {
         let alertController = UIAlertController(title: "Error", message: error.localizedDescription, preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-        (UIApplication.shared.delegate?.window??.rootViewController)!.present(alertController, animated: true)
+        findTopMostViewController().present(alertController, animated: true)
     }
     
     private func presentAlert(withTitle title: String,message:String?=nil) {
         let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-        (UIApplication.shared.delegate?.window??.rootViewController)!.present(alertController, animated: true)
+        findTopMostViewController().present(alertController, animated: true)
     }
     
     override func supportedEvents() -> [String]! {
@@ -507,7 +515,7 @@ extension AdyenPayment: DropInComponentDelegate {
 	func didComplete(from component: DropInComponent) {
 		redirectComponent = nil
 		threeDS2Component = nil
-		(UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true)
+        findTopMostViewController().dismiss(animated: true)
 	}
     
     internal func didProvide(_ data: ActionComponentData, from component: DropInComponent) {
@@ -536,7 +544,7 @@ extension AdyenPayment: ActionComponentDelegate {
 	func didComplete(from component: ActionComponent) {
 		redirectComponent = nil
 		threeDS2Component = nil
-		(UIApplication.shared.delegate?.window??.rootViewController)!.dismiss(animated: true)
+        findTopMostViewController().dismiss(animated: true)
 	}
     
     internal func didFail(with error: Error, from component: ActionComponent) {
