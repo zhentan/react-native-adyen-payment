@@ -23,18 +23,16 @@ import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 
-import com.adyen.checkout.base.api.ImageLoader;
-import com.adyen.checkout.base.ui.view.AdyenLinearLayout;
-import com.adyen.checkout.base.ui.view.AdyenTextInputEditText;
-import com.adyen.checkout.base.ui.view.RoundCornerImageView;
-import com.adyen.checkout.base.validation.ValidatedField;
-import com.adyen.checkout.card.data.CardInputData;
-import com.adyen.checkout.card.data.CardOutputData;
+import com.adyen.checkout.components.api.ImageLoader;
+import com.adyen.checkout.components.ui.view.AdyenLinearLayout;
+import com.adyen.checkout.components.ui.view.AdyenTextInputEditText;
+import com.adyen.checkout.components.ui.view.RoundCornerImageView;
+import com.adyen.checkout.card.CardInputData;
+import com.adyen.checkout.card.CardOutputData;
 import com.adyen.checkout.card.data.CardType;
 import com.adyen.checkout.card.data.ExpiryDate;
 import com.adyen.checkout.card.ui.CardNumberInput;
 import com.adyen.checkout.card.ui.ExpiryDateInput;
-import com.adyen.checkout.card.ui.R;
 import com.adyen.checkout.card.ui.SecurityCodeInput;
 
 import java.util.List;
@@ -43,9 +41,9 @@ import java.util.List;
  * CardView for {@link CardComponent}.
  */
 @SuppressWarnings("SyntheticAccessor")
-public final class SpinCardView extends AdyenLinearLayout<CardComponent> implements Observer<CardOutputData> {
+public final class SpinCardView {//extends AdyenLinearLayout<CardComponent> implements Observer<CardOutputData> {
 
-    private RoundCornerImageView mCardBrandLogoImageView;
+    /*private RoundCornerImageView mCardBrandLogoImageView;
 
     private CardNumberInput mCardNumberEditText;
     private ExpiryDateInput mExpiryDateEditText;
@@ -67,10 +65,7 @@ public final class SpinCardView extends AdyenLinearLayout<CardComponent> impleme
     public SpinCardView(@NonNull Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, 0);
     }
-
-    /**
-     * View for CardComponent.
-     */
+    
     public SpinCardView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         setOrientation(LinearLayout.VERTICAL);
@@ -365,5 +360,5 @@ public final class SpinCardView extends AdyenLinearLayout<CardComponent> impleme
 
         mStorePaymentMethodSwitch.setVisibility(GONE);
         mCardHolderInput.setVisibility(GONE);
-    }
+    }*/
 }

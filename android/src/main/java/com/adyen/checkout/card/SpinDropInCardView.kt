@@ -13,16 +13,16 @@ import androidx.lifecycle.Observer
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import com.adyen.checkout.base.api.ImageLoader
-import com.adyen.checkout.base.ui.view.AdyenLinearLayout
-import com.adyen.checkout.card.data.CardOutputData
+import com.adyen.checkout.components.api.ImageLoader
+import com.adyen.checkout.components.ui.view.AdyenLinearLayout
+import com.adyen.checkout.card.CardOutputData
 import kotlinx.android.synthetic.main.view_card_component.view.cardView
 import kotlinx.android.synthetic.main.view_card_component.view.recyclerView_cardList
 import com.rnlib.adyen.R as dropInR
 
-class SpinDropInCardView : AdyenLinearLayout<CardComponent>, Observer<CardOutputData> {
+class SpinDropInCardView {// : AdyenLinearLayout<CardComponent>, Observer<CardOutputData> {
 
-    private lateinit var mCardListAdapter: CardListAdapter
+    /*private lateinit var mCardListAdapter: CardListAdapter
 
     constructor(context: Context) : this(context, null)
 
@@ -68,5 +68,5 @@ class SpinDropInCardView : AdyenLinearLayout<CardComponent>, Observer<CardOutput
 
     override fun highlightValidationErrors() {
         cardView.highlightValidationErrors()
-    }
+    }*/
 }
