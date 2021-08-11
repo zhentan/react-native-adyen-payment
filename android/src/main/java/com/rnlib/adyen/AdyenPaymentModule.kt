@@ -417,13 +417,16 @@ class AdyenPaymentModule(private var reactContext : ReactApplicationContext) : R
         }
         AdyenComponent.startPayment(context, paymentMethodsApiResponse, configBuilder.build())
         */
+        val adyenComponentConfiguration = createConfigurationBuilder(super.getCurrentActivity() as Context)
+            .build()
+
         val resultIntent = Intent(reactContext as Context, super.getCurrentActivity()!!::class.java)
         resultIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
 
         val dropInConfigurationBuilder = DropInConfiguration.Builder(
             super.getCurrentActivity() as Context,
             AdyenDropInService::class.java,
-            System.getenv("ADYEN_CLIENT_ENCRYPTION_PUBLIC_KEY") ?: ""
+            adyenComponentConfiguration.clientKey ?: ""
         ).addCardConfiguration(cardConfiguration)
             .addGooglePayConfiguration(googlePayConfig)
 
