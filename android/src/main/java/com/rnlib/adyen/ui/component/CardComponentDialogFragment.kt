@@ -1,35 +1,39 @@
 package com.rnlib.adyen.ui.component
 
 import android.os.Bundle
-import androidx.lifecycle.ViewModelProviders
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.SwitchCompat
-import com.adyen.checkout.base.PaymentComponentState
-import com.adyen.checkout.base.model.payments.request.PaymentMethodDetails
-import com.adyen.checkout.base.util.CurrencyUtils
-import com.adyen.checkout.base.util.PaymentMethodTypes
+import androidx.lifecycle.ViewModelProviders
 import com.adyen.checkout.card.CardComponent
+import com.adyen.checkout.card.CardView
+import com.adyen.checkout.components.PaymentComponentState
+import com.adyen.checkout.components.model.payments.request.PaymentMethodDetails
+import com.adyen.checkout.components.util.CurrencyUtils
+import com.adyen.checkout.components.util.PaymentMethodTypes
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.core.log.LogUtil
 import com.adyen.checkout.core.log.Logger
-
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.rnlib.adyen.R
 import com.rnlib.adyen.ui.AdyenComponentViewModel
 import com.rnlib.adyen.ui.base.BaseComponentDialogFragment
-import kotlinx.android.synthetic.main.frag_card_component.adyenCardView
 import kotlinx.android.synthetic.main.view_card_component.view.*
 
 class CardComponentDialogFragment : BaseComponentDialogFragment() {
+
+    private lateinit var adyenCardView: CardView
 
     companion object : BaseCompanion<CardComponentDialogFragment>(CardComponentDialogFragment::class.java) {
         private val TAG = LogUtil.getTag()
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.frag_card_component, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        val rootView = inflater.inflate(R.layout.frag_card_component, container, false)
+        adyenCardView = rootView.findViewById(R.id.adyenCardView)
+
+        return rootView
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,7 +61,9 @@ class CardComponentDialogFragment : BaseComponentDialogFragment() {
         // try to get the name from the payment methods response
         activity?.let { activity ->
             val dropInViewModel = ViewModelProviders.of(activity).get(AdyenComponentViewModel::class.java)
-            adyenCardView.header.text = dropInViewModel.paymentMethodsApiResponse.paymentMethods?.find { it.type == PaymentMethodTypes.SCHEME }?.name
+            adyenCardView.header.text = dropInViewModel.paymentMethodsApiResponse.paymentMethods?.find {
+                it.type == PaymentMethodTypes.SCHEME
+            }?.name
         }
 
         adyenCardView.attach(component as CardComponent, this)
@@ -84,6 +90,14 @@ class CardComponentDialogFragment : BaseComponentDialogFragment() {
 
     override fun onChanged(paymentComponentState: PaymentComponentState<in PaymentMethodDetails>?) {
         //adyenCardView.payButton.isEnabled = paymentComponentState != null && paymentComponentState.isValid()
+    }
+
+    override fun setPaymentPendingInitialization(pending: Boolean) {
+
+    }
+
+    override fun highlightValidationErrors() {
+
     }
 
     private fun bindAddCardButtonWithAuthorizeSwitch() {

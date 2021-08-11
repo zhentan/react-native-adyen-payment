@@ -8,17 +8,12 @@
 
 package com.rnlib.adyen
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import com.adyen.checkout.base.model.PaymentMethodsApiResponse
-import com.adyen.checkout.base.model.paymentmethods.PaymentMethod
-import com.adyen.checkout.base.util.PaymentMethodTypes
 import com.adyen.checkout.card.CardConfiguration
-import com.adyen.checkout.card.data.CardType
+import com.adyen.checkout.components.model.PaymentMethodsApiResponse
 import com.adyen.checkout.core.log.LogUtil
 import com.adyen.checkout.core.log.Logger
-
 import com.rnlib.adyen.AdyenComponent.Companion.startPayment
 import com.rnlib.adyen.ui.AdyenComponentActivity
 

@@ -8,11 +8,11 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
-import com.adyen.checkout.base.api.ImageLoader
-import com.adyen.checkout.base.model.paymentmethods.PaymentMethod
-import com.adyen.checkout.base.model.paymentmethods.StoredPaymentMethod
-import com.adyen.checkout.base.util.DateUtils
-import com.adyen.checkout.base.util.PaymentMethodTypes
+import com.adyen.checkout.components.api.ImageLoader
+import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
+import com.adyen.checkout.components.model.paymentmethods.StoredPaymentMethod
+import com.adyen.checkout.components.util.DateUtils
+import com.adyen.checkout.components.util.PaymentMethodTypes
 import com.adyen.checkout.core.log.LogUtil
 import com.rnlib.adyen.R
 
@@ -69,19 +69,21 @@ class PaymentMethodAdapter(
                 if (paymentMethod is StoredPaymentMethod) {
                     holder.text.text = context.getString(R.string.card_number_4digit, paymentMethod.lastFour)
                     holder.detail.text = context.getString(R.string.expires_in, paymentMethod.expiryMonth,
-                            DateUtils.removeFirstTwoDigitFromYear(paymentMethod.expiryYear))
+                            paymentMethod.expiryYear)
                     holder.detail.visibility = View.VISIBLE
                 } else {
                     holder.text.text = paymentMethod?.name
                     holder.detail.visibility = View.GONE
                 }
 
-                var txVariant = when (paymentMethod.type) {
-                    PaymentMethodTypes.SCHEME -> if (paymentMethod is StoredPaymentMethod) paymentMethod.brand else CARD_LOGO_TYPE
+                val txVariant = when (paymentMethod.type) {
+                    PaymentMethodTypes.SCHEME -> if (paymentMethod is StoredPaymentMethod) (paymentMethod as PaymentMethod).brand else CARD_LOGO_TYPE
                     else -> paymentMethod.type!!
                 }
 
-                imageLoader.load(txVariant, holder.logo)
+                if (txVariant != null) {
+                    imageLoader.load(txVariant, holder.logo)
+                }
 
                 holder.itemView.setOnClickListener {
                     onItemClick(getPaymentMethod(position))

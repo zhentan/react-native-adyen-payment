@@ -14,23 +14,43 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import com.adyen.checkout.adyen3ds2.Adyen3DS2Component
-import com.adyen.checkout.base.ActionComponentData
-import com.adyen.checkout.base.model.payments.response.Action
+import com.adyen.checkout.adyen3ds2.Adyen3DS2Configuration
+import com.adyen.checkout.components.ActionComponentData
+import com.adyen.checkout.components.model.payments.response.Action
+import com.adyen.checkout.core.api.Environment
 import com.adyen.checkout.core.log.LogUtil
 import com.adyen.checkout.core.log.Logger
 import com.adyen.checkout.redirect.RedirectComponent
+import com.adyen.checkout.redirect.RedirectConfiguration
 import com.adyen.checkout.wechatpay.WeChatPayActionComponent
 
-class ActionHandler(activity: FragmentActivity, private val callback: DetailsRequestedInterface) : Observer<ActionComponentData> {
+class ActionHandler(activity: FragmentActivity, private val callback: DetailsRequestedInterface,
+                    private val adyenComponentConfiguration: AdyenComponentConfiguration) : Observer<ActionComponentData> {
 
     companion object {
         val TAG = LogUtil.getTag()
         const val UNKNOWN_ACTION = "UNKNOWN ACTION"
     }
 
-    private val redirectComponent = RedirectComponent.PROVIDER.get(activity)
-    private val adyen3DS2Component = Adyen3DS2Component.PROVIDER.get(activity)
-    private val weChatPayActionComponent = WeChatPayActionComponent.PROVIDER.get(activity)
+    val redirectConfiguration = RedirectConfiguration.Builder(activity.baseContext, "")
+        .setEnvironment(Environment.TEST)
+        .build()
+
+    private val redirectComponent = RedirectComponent.PROVIDER.get(
+        activity,
+        activity.application,
+        adyenComponentConfiguration.getConfigurationForAction(activity)
+    )
+    private val adyen3DS2Component = Adyen3DS2Component.PROVIDER.get(
+        activity,
+        activity.application,
+        adyenComponentConfiguration.getConfigurationForAction(activity)
+    )
+    private val weChatPayActionComponent = WeChatPayActionComponent.PROVIDER.get(
+        activity,
+        activity.application,
+        adyenComponentConfiguration.getConfigurationForAction(activity)
+    )
 
     init {
         redirectComponent.observe(activity, this)

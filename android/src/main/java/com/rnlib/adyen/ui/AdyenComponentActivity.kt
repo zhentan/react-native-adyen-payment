@@ -15,16 +15,15 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.Toast
 import android.text.TextUtils
-import com.adyen.checkout.base.ActionComponentData
-import com.adyen.checkout.base.ComponentError
-import com.adyen.checkout.base.model.PaymentMethodsApiResponse
-import com.adyen.checkout.base.model.paymentmethods.PaymentMethod
-import com.adyen.checkout.base.model.payments.request.PaymentComponentData
-import com.adyen.checkout.base.model.payments.request.PaymentMethodDetails
-import com.adyen.checkout.base.model.payments.request.GenericPaymentMethod
-import com.adyen.checkout.base.model.payments.response.Action
-import com.adyen.checkout.base.util.PaymentMethodTypes
-import com.adyen.checkout.core.code.Lint
+import com.adyen.checkout.components.ActionComponentData
+import com.adyen.checkout.components.ComponentError
+import com.adyen.checkout.components.model.PaymentMethodsApiResponse
+import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
+import com.adyen.checkout.components.model.payments.request.PaymentComponentData
+import com.adyen.checkout.components.model.payments.request.PaymentMethodDetails
+import com.adyen.checkout.components.model.payments.request.GenericPaymentMethod
+import com.adyen.checkout.components.model.payments.response.Action
+import com.adyen.checkout.components.util.PaymentMethodTypes
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.core.log.LogUtil
 import com.adyen.checkout.core.log.Logger
@@ -36,7 +35,6 @@ import com.rnlib.adyen.R
 import com.rnlib.adyen.service.CallResult
 import com.rnlib.adyen.service.ComponentService
 import com.rnlib.adyen.ui.base.DropInBottomSheetDialogFragment
-import com.rnlib.adyen.ui.component.GenericComponentDialogFragment
 import com.rnlib.adyen.ui.paymentmethods.PaymentMethodListDialogFragment
 
 import com.adyen.checkout.googlepay.GooglePayComponent
@@ -45,6 +43,7 @@ import com.adyen.checkout.googlepay.GooglePayConfiguration
 import com.adyen.checkout.redirect.RedirectUtil
 import com.adyen.checkout.wechatpay.WeChatPayUtils
 import com.rnlib.adyen.ui.component.CardComponentDialogFragment
+import com.rnlib.adyen.ui.component.GenericComponentDialogFragment
 import org.json.JSONObject
 import java.util.Locale
 
@@ -86,11 +85,9 @@ class AdyenComponentActivity : AppCompatActivity(), DropInBottomSheetDialogFragm
 
     private lateinit var localBroadcastManager: LocalBroadcastManager
 
-    @Suppress(Lint.PROTECTED_IN_FINAL)
     protected lateinit var actionHandler: ActionHandler
 
     // If a new intent is received we can continue processing, otherwise we might need to time out
-    @Suppress(Lint.PROTECTED_IN_FINAL)
     private var isWaitingResult = false
 
     private val loadingDialog = LoadingDialogFragment.newInstance()
@@ -207,7 +204,7 @@ class AdyenComponentActivity : AppCompatActivity(), DropInBottomSheetDialogFragm
         localBroadcastManager = LocalBroadcastManager.getInstance(this)
         localBroadcastManager.registerReceiver(callResultReceiver, callResultIntentFilter)
 
-        actionHandler = ActionHandler(this, this)
+        actionHandler = ActionHandler(this, this, adyenComponentConfiguration)
         actionHandler.restoreState(savedInstanceState)
     }
 
@@ -279,7 +276,7 @@ class AdyenComponentActivity : AppCompatActivity(), DropInBottomSheetDialogFragm
         val dialogFragment = when (paymentMethod.type) {
             PaymentMethodTypes.SCHEME -> CardComponentDialogFragment
             else -> GenericComponentDialogFragment
-        }.newInstance(paymentMethod, adyenComponentConfiguration, wasInExpandMode)
+        }.newInstance(paymentMethod, adyenComponentConfiguration)
 
         dialogFragment.show(supportFragmentManager, COMPONENT_FRAGMENT_TAG)
     }
@@ -316,7 +313,6 @@ class AdyenComponentActivity : AppCompatActivity(), DropInBottomSheetDialogFragm
         this.requestPaymentsCall(paymentComponentData)
     }
 
-    @Suppress(Lint.PROTECTED_IN_FINAL)
     protected fun handleCallResult(callResult: CallResult) {
         Logger.d(TAG, "handleCallResult - ${callResult.type.name}")
         when (callResult.type) {

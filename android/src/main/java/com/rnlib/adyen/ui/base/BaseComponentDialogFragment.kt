@@ -6,49 +6,72 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
-import com.adyen.checkout.base.ComponentError
-import com.adyen.checkout.base.PaymentComponent
-import com.adyen.checkout.base.PaymentComponentState
-import com.adyen.checkout.base.model.paymentmethods.PaymentMethod
-import com.adyen.checkout.base.model.payments.request.PaymentMethodDetails
+import androidx.fragment.app.viewModels
+import com.adyen.checkout.components.ComponentError
+import com.adyen.checkout.components.PaymentComponent
+import com.adyen.checkout.components.PaymentComponentState
+import com.adyen.checkout.components.base.Configuration
+import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
+import com.adyen.checkout.components.model.paymentmethods.StoredPaymentMethod
+import com.adyen.checkout.components.model.payments.request.PaymentMethodDetails
 import com.adyen.checkout.core.exception.CheckoutException
 import com.adyen.checkout.core.log.LogUtil
 import com.adyen.checkout.core.log.Logger
+import com.adyen.checkout.dropin.ui.ComponentDialogViewModel
+import com.adyen.checkout.dropin.ui.ComponentFragmentState
+import com.adyen.checkout.dropin.ui.base.DropInBottomSheetDialogFragment
+import androidx.lifecycle.observe
 
 import com.rnlib.adyen.AdyenComponentConfiguration
-import com.rnlib.adyen.R
 import com.rnlib.adyen.getComponentFor
 
-open abstract class BaseComponentDialogFragment : DropInBottomSheetDialogFragment(), Observer<PaymentComponentState<in PaymentMethodDetails>> {
+private const val DROP_IN_CONFIGURATION = "DROP_IN_CONFIGURATION"
+private const val STORED_PAYMENT_METHOD = "STORED_PAYMENT_METHOD"
+private const val NAVIGATED_FROM_PRESELECTED = "NAVIGATED_FROM_PRESELECTED"
+private const val PAYMENT_METHOD = "PAYMENT_METHOD"
+
+@Suppress("TooManyFunctions")
+abstract class BaseComponentDialogFragment : DropInBottomSheetDialogFragment(), Observer<PaymentComponentState<in PaymentMethodDetails>> {
 
     companion object {
         private val TAG = LogUtil.getTag()
     }
 
-    lateinit var paymentMethod: PaymentMethod
-    lateinit var component: PaymentComponent<PaymentComponentState<in PaymentMethodDetails>>
+    protected val componentDialogViewModel: ComponentDialogViewModel by viewModels()
+
+    var paymentMethod: PaymentMethod = PaymentMethod()
+    var storedPaymentMethod: StoredPaymentMethod = StoredPaymentMethod()
+    lateinit var component: PaymentComponent<PaymentComponentState<in PaymentMethodDetails>, Configuration>
     lateinit var adyenComponentConfiguration: AdyenComponentConfiguration
+    private var isStoredPayment = false
+    private var navigatedFromPreselected = false
 
     open class BaseCompanion<T : BaseComponentDialogFragment>(private var classes: Class<T>) {
 
-        companion object {
-            const val PAYMENT_METHOD = "PAYMENT_METHOD"
-            const val WAS_IN_EXPAND_STATUS = "WAS_IN_EXPAND_STATUS"
-            const val DROP_IN_CONFIGURATION = "DROP_IN_CONFIGURATION"
+        fun newInstance(
+            paymentMethod: PaymentMethod,
+            adyenComponentConfiguration: AdyenComponentConfiguration
+        ): T {
+            val args = Bundle()
+            args.putParcelable(PAYMENT_METHOD, paymentMethod)
+            args.putParcelable(DROP_IN_CONFIGURATION, adyenComponentConfiguration)
+
+            val dialogFragment = classes.newInstance()
+            dialogFragment.arguments = args
+            return dialogFragment
         }
 
         fun newInstance(
-            paymentMethod: PaymentMethod,
+            storedPaymentMethod: StoredPaymentMethod,
             adyenComponentConfiguration: AdyenComponentConfiguration,
-            wasInExpandStatus: Boolean
+            navigatedFromPreselected: Boolean
         ): T {
-            var args = Bundle()
-            args.putParcelable(PAYMENT_METHOD, paymentMethod)
-            args.putBoolean(WAS_IN_EXPAND_STATUS, wasInExpandStatus)
+            val args = Bundle()
+            args.putParcelable(STORED_PAYMENT_METHOD, storedPaymentMethod)
             args.putParcelable(DROP_IN_CONFIGURATION, adyenComponentConfiguration)
+            args.putBoolean(NAVIGATED_FROM_PRESELECTED, navigatedFromPreselected)
 
-            var dialogFragment = classes.newInstance()
+            val dialogFragment = classes.newInstance()
             dialogFragment.arguments = args
             return dialogFragment
         }
@@ -60,23 +83,64 @@ open abstract class BaseComponentDialogFragment : DropInBottomSheetDialogFragmen
 
     abstract override fun onChanged(paymentComponentState: PaymentComponentState<in PaymentMethodDetails>?)
 
+    protected abstract fun setPaymentPendingInitialization(pending: Boolean)
+
+    protected abstract fun highlightValidationErrors()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        paymentMethod = arguments?.getParcelable(BaseCompanion.PAYMENT_METHOD) ?: throw IllegalArgumentException("Payment method is null")
-        adyenComponentConfiguration = arguments?.getParcelable(BaseCompanion.DROP_IN_CONFIGURATION)
-            ?: throw IllegalArgumentException("DropIn Configuration is null")
+        arguments?.let {
+            storedPaymentMethod = it.getParcelable(STORED_PAYMENT_METHOD) ?: storedPaymentMethod
+            paymentMethod = it.getParcelable(PAYMENT_METHOD) ?: paymentMethod
+            isStoredPayment = !storedPaymentMethod.type.isNullOrEmpty()
+            navigatedFromPreselected = it.getBoolean(NAVIGATED_FROM_PRESELECTED, false)
+            adyenComponentConfiguration = it.getParcelable(DROP_IN_CONFIGURATION)
+                ?: throw IllegalArgumentException("DropIn Configuration is null")
+        }
 
         try {
-            component = getComponentFor(this, paymentMethod, adyenComponentConfiguration)
+            component = if (isStoredPayment)
+                getComponentFor(
+                    this,
+                    storedPaymentMethod,
+                    adyenComponentConfiguration
+                )
+            else
+                getComponentFor(this, paymentMethod, adyenComponentConfiguration)
         } catch (e: CheckoutException) {
             handleError(ComponentError(e))
             return
         }
     }
 
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        observeState()
+        super.onActivityCreated(savedInstanceState)
+    }
+
+    private fun observeState() {
+        componentDialogViewModel.componentFragmentState.observe(viewLifecycleOwner) {
+            Logger.v(TAG, "state: $it")
+            setPaymentPendingInitialization(it == ComponentFragmentState.AWAITING_COMPONENT_INITIALIZATION)
+            when (it) {
+                ComponentFragmentState.INVALID_UI -> highlightValidationErrors()
+                ComponentFragmentState.PAYMENT_READY -> {
+                    startPayment()
+                    componentDialogViewModel.paymentStarted()
+                }
+                else -> { // do nothing
+                }
+            }
+        }
+    }
+
     override fun onBackPressed(): Boolean {
-        Logger.d(TAG, "onBackPressed")
-        protocol.showPaymentMethodsDialog(arguments?.getBoolean(BaseCompanion.WAS_IN_EXPAND_STATUS, false)!!)
+        Logger.d(TAG, "onBackPressed - $navigatedFromPreselected")
+        if (navigatedFromPreselected) {
+            protocol.showPreselectedDialog()
+        } else {
+            protocol.showPaymentMethodsDialog()
+        }
         return true
     }
 
@@ -91,7 +155,7 @@ open abstract class BaseComponentDialogFragment : DropInBottomSheetDialogFragmen
         try {
             if (componentState != null) {
                 if (componentState.isValid) {
-                    protocol.requestPaymentsCall(componentState.data)
+                    protocol.requestPaymentsCall(componentState)
                 } else {
                     throw CheckoutException("PaymentComponentState are not valid.")
                 }
@@ -103,9 +167,10 @@ open abstract class BaseComponentDialogFragment : DropInBottomSheetDialogFragmen
         }
     }
 
-    fun createErrorHandlerObserver(): Observer<ComponentError> {
+    protected fun createErrorHandlerObserver(): Observer<ComponentError> {
         return Observer {
             if (it != null) {
+                Logger.e(TAG, "ComponentError", it.exception)
                 handleError(it)
             }
         }
@@ -113,8 +178,7 @@ open abstract class BaseComponentDialogFragment : DropInBottomSheetDialogFragmen
 
     fun handleError(componentError: ComponentError) {
         Logger.e(TAG, componentError.errorMessage)
-        Toast.makeText(context, R.string.component_error, Toast.LENGTH_LONG).show()
-
-        protocol.terminateDropIn()
+        protocol.showError(getString(com.adyen.checkout.dropin.R.string.component_error), componentError.errorMessage, true)
     }
 }
+

@@ -9,10 +9,10 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 import android.view.KeyEvent
+import android.view.View
 import android.widget.FrameLayout
-import com.adyen.checkout.base.model.paymentmethods.PaymentMethod
-import com.adyen.checkout.base.model.payments.request.PaymentComponentData
-import com.adyen.checkout.base.model.payments.request.PaymentMethodDetails
+import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
+import com.adyen.checkout.components.model.payments.request.PaymentComponentData
 
 import com.rnlib.adyen.R
 import com.adyen.checkout.googlepay.GooglePayConfiguration
@@ -53,12 +53,14 @@ abstract class DropInBottomSheetDialogFragment : BottomSheetDialogFragment() {
             val bottomSheet = (dialog as BottomSheetDialog)
                     .findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
 
-            var behavior = BottomSheetBehavior.from(bottomSheet)
+            if (bottomSheet != null) {
+                val behavior = BottomSheetBehavior.from(bottomSheet)
 
-            if (this.dialogInitViewState == BottomSheetBehavior.STATE_EXPANDED)
-                behavior.skipCollapsed = true
+                if (this.dialogInitViewState == BottomSheetBehavior.STATE_EXPANDED)
+                    behavior.skipCollapsed = true
 
-            behavior.state = this.dialogInitViewState
+                behavior.state = this.dialogInitViewState
+            }
         }
 
         return dialog

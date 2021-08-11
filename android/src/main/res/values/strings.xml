@@ -20,4 +20,5 @@
     <string name="change_payment_method">Change payment method</string>
     <string name="credit_card">Credit Card</string>
     <string name="add_card">Add Card</string>
+    <string name="expires_in">%1$s/%2$s</string>
 </resources>

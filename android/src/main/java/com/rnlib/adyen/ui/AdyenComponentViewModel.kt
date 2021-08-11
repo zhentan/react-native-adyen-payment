@@ -3,12 +3,12 @@ package com.rnlib.adyen.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
-import com.adyen.checkout.base.ComponentAvailableCallback
-import com.adyen.checkout.base.component.Configuration
-import com.adyen.checkout.base.model.PaymentMethodsApiResponse
-import com.adyen.checkout.base.model.paymentmethods.PaymentMethod
-import com.adyen.checkout.base.model.paymentmethods.StoredPaymentMethod
-import com.adyen.checkout.base.util.PaymentMethodTypes
+import com.adyen.checkout.components.base.Configuration
+import com.adyen.checkout.components.model.PaymentMethodsApiResponse
+import com.adyen.checkout.components.model.paymentmethods.PaymentMethod
+import com.adyen.checkout.components.model.paymentmethods.StoredPaymentMethod
+import com.adyen.checkout.components.util.PaymentMethodTypes
+import com.adyen.checkout.components.ComponentAvailableCallback
 import com.adyen.checkout.core.log.LogUtil
 import com.adyen.checkout.core.log.Logger
 
@@ -16,7 +16,8 @@ import com.rnlib.adyen.AdyenComponentConfiguration
 import com.rnlib.adyen.checkComponentAvailability
 import com.rnlib.adyen.ui.paymentmethods.PaymentMethodsModel
 
-class AdyenComponentViewModel(application: Application) : AndroidViewModel(application), ComponentAvailableCallback<Configuration> {
+class AdyenComponentViewModel(application: Application) : AndroidViewModel(application),
+    ComponentAvailableCallback<Configuration> {
 
     companion object {
         val TAG = LogUtil.getTag()
@@ -29,7 +30,7 @@ class AdyenComponentViewModel(application: Application) : AndroidViewModel(appli
             if (value != paymentMethodsApiResponse) {
                 field = value
                 if (value.paymentMethods != null) {
-                    onPaymentMethodsResponseChanged(value.paymentMethods.orEmpty() + value.storedPaymentMethods.orEmpty())
+                    onPaymentMethodsResponseChanged(value.paymentMethods!!)
                 }
             }
         }
@@ -80,15 +81,8 @@ class AdyenComponentViewModel(application: Application) : AndroidViewModel(appli
     }
 
     private fun requiresDetails(paymentMethod: PaymentMethod): Boolean {
-        // If details is empty or all optional, we can call payments directly.
-        paymentMethod.details?.let {
-            for (inputDetail in it) {
-                if (!inputDetail.isOptional) {
-                    return true
-                }
-            }
-        }
-        return false
+        // If details is null or empty, we can call payments directly.
+        return  paymentMethod.details.isNullOrEmpty()
     }
     
 
@@ -97,7 +91,7 @@ class AdyenComponentViewModel(application: Application) : AndroidViewModel(appli
             if (paymentMethod.isEcommerce) {
                 paymentMethodsModel.storedPaymentMethods.add(paymentMethod)
             } else {
-                Logger.d(TAG, "Stored method ${paymentMethod.type} is not Ecommerce")
+                Logger.d(TAG, "Stored method ${(paymentMethod as PaymentMethod).type} is not Ecommerce")
             }
         } else {
             paymentMethodsModel.paymentMethods.add(paymentMethod)
